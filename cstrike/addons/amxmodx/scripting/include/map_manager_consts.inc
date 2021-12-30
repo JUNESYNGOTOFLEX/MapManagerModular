@@ -89,11 +89,11 @@ enum {
     SHOW_HUD
 };
 
-// used for cvar "mapm_show_percent"
+// used for cvar "mapm_show_progress"
 enum {
-    PERCENT_DISABLED,
-    PERCENT_ALWAYS,
-    PERCENT_AFTER_VOTE
+    PROGRESS_DISABLED,
+    PROGRESS_ALWAYS,
+    PROGRESS_AFTER_VOTE
 };
 
 // used for forward "mapm_can_be_nominated"
