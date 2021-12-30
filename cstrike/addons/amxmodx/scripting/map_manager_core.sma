@@ -47,7 +47,8 @@ enum Cvars {
     VOTELIST_SIZE,
     SHOW_RESULT_TYPE,
     SHOW_SELECTS,
-    SHOW_PERCENT,
+    SHOW_PROGRESS,
+    PROGRESS_MODE,
     RANDOM_NUMS,
     PREPARE_TIME,
     VOTE_TIME,
@@ -70,8 +71,9 @@ new Array:g_aMapsList = Invalid_Array;
 
 new bool:g_bBlockLoad = false;
 new g_iShowType;
-new g_iShowPercent;
 new g_bShowSelects;
+new g_iShowProgress;
+new g_iProgressMode;
 new g_iTimer;
 new g_bCanExtend;
 new g_iExternalMaxItems;
@@ -99,7 +101,8 @@ public plugin_init()
     g_pCvars[VOTELIST_SIZE] = register_cvar("mapm_votelist_size", "5");
     g_pCvars[SHOW_RESULT_TYPE] = register_cvar("mapm_show_result_type", "1"); //0 - disable, 1 - menu, 2 - hud
     g_pCvars[SHOW_SELECTS] = register_cvar("mapm_show_selects", "1"); // 0 - disable, 1 - all
-    g_pCvars[SHOW_PERCENT] = register_cvar("mapm_show_percent", "1"); // 0 - disable, 1 - always, 2 - after vote
+    g_pCvars[SHOW_PROGRESS] = register_cvar("mapm_show_progress", "1"); // 0 - disable, 1 - always, 2 - after vote
+    g_pCvars[PROGRESS_MODE] = register_cvar("mapm_progress_mode", "0"); // 0 - percent, 1 - vote count
     g_pCvars[RANDOM_NUMS] = register_cvar("mapm_random_nums", "0"); // 0 - disable, 1 - enable
     g_pCvars[PREPARE_TIME] = register_cvar("mapm_prepare_time", "5"); // seconds
     g_pCvars[VOTE_TIME] = register_cvar("mapm_vote_time", "10"); // seconds
@@ -571,8 +574,9 @@ public countdown(taskid)
         if(taskid == TASK_VOTE_TIME && !g_bBlockShowVote) {
             new dont_show_result = get_num(SHOW_RESULT_TYPE) == SHOW_DISABLED;
             g_iShowType = get_num(SHOW_RESULT_TYPE);
-            g_iShowPercent = get_num(SHOW_PERCENT);
             g_bShowSelects = get_num(SHOW_SELECTS);
+            g_iShowProgress = get_num(SHOW_PROGRESS);
+            g_iProgressMode = get_num(PROGRESS_MODE);
             
             new players[32], pnum; get_players(players, pnum, "ch");
             for(new i, id; i < pnum; i++) {
@@ -616,7 +620,7 @@ start_vote()
 public show_votemenu(id)
 {
     static menu[512];
-    new len, keys, percent, item;
+    new len, keys, item;
     
     len = formatex(menu, charsmax(menu), "\y%L:^n^n", id, g_iVoted[id] != NOT_VOTED ? "MAPM_MENU_VOTE_RESULTS" : "MAPM_MENU_CHOOSE_MAP");
     
@@ -633,9 +637,12 @@ public show_votemenu(id)
                             (g_sDisplayedItemName[item][0]) ? g_sDisplayedItemName[item] : g_sVoteList[item]);
         }
 
-        if(g_iShowPercent == PERCENT_ALWAYS || g_iVoted[id] != NOT_VOTED && g_iShowPercent == PERCENT_AFTER_VOTE) {
-            percent = g_iTotalVotes ? floatround(g_iVotes[item] * 100.0 / g_iTotalVotes) : 0;
-            len += formatex(menu[len], charsmax(menu) - len, "\d[\r%d%%\d]", percent);
+        if((g_iShowProgress == PERCENT_ALWAYS || g_iVoted[id] != NOT_VOTED && g_iShowProgress == PERCENT_AFTER_VOTE) && g_iTotalVotes) {
+			if (g_iProgressMode) {
+				len += formatex(menu[len], charsmax(menu) - len, "\d[\r%d\d]", g_iVotes[item]);
+			} else {
+				len += formatex(menu[len], charsmax(menu) - len, "\d[\r%d%%\d]", floatround(g_iVotes[item] * 100.0 / g_iTotalVotes));
+			}
         }
 
         if(item == g_iCurMap) {
